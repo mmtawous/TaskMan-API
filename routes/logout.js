@@ -1,5 +1,6 @@
 const express = require('express')
 const JWT = require('jsonwebtoken')
+const User = require('../models/user.js')
 const redisClient = require('../utils/redis_client')
 const cookieParser = require("cookie-parser")
 
@@ -37,6 +38,16 @@ async function logout(req, res) {
     redisClient.expireAt(token_key, decodedRefresh.exp);
 
     res.clearCookie('jwt');
+
+    // Update the lastLogoutTime field in user
+    try {
+        var user = await User.findOneById(decodedRefresh.id).exec()
+        user.lastLogoutTime = Date.now();
+        user.save();
+    } catch (err) {
+        res.status(400).json({message: err.message})
+    }
+
     return res.status(200).json({ message: 'Success; Logged out' })
 }
 

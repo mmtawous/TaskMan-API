@@ -3,6 +3,7 @@ const redisClient = require('../utils/redis_client')
 const JWT = require('jsonwebtoken')
 const { genJWT } = require('../utils/auth_utils.js')
 const cookieParser = require("cookie-parser")
+const User = require('../models/user.js')
 
 
 const router = express.Router()
@@ -37,6 +38,12 @@ async function refresh(req, res) {
     } catch (err) {
         // If refresh token verification fails then return 401
         return res.status(401).json({ message: 'Invalid refresh token' })
+    }
+
+    const user = await User.findById(decodedRefresh.id)
+
+    if (decodedRefresh.iat < user.lastLogoutTime.getTime()) {
+        return res.status(400).json({ message: 'Refresh token created before last logout' })
     }
 
 

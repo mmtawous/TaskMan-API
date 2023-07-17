@@ -12,7 +12,8 @@ router.post('/', registerUser)
 async function registerUser(req, res) {
     try {
         // Create a User model instance using the req parameters provided in JSON.
-        var user = new User(req.body)
+        var user = new User({email: req.body.email, password: req.body.email})
+
         // Validate the request body
         await user.validate()
 

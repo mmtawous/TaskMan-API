@@ -2,6 +2,7 @@ const express = require('express')
 const registerRoute = require('./register.js')
 const loginRoute = require('./login.js')
 const logoutRoute = require('./logout.js')
+const changePwdRoute = require('./changePassword.js')
 const refreshRoute = require('./refresh.js')
 const tasksRoute = require('./tasks.js')
 
@@ -11,8 +12,10 @@ const router = express.Router()
 router.use('/api/register', registerRoute)
 router.use('/api/login', loginRoute)
 router.use('/api/logout', logoutRoute)
+router.use('/api/changePassword', changePwdRoute)
 router.use('/api/refresh', refreshRoute)
 router.use('/api/tasks', tasksRoute)
+
 
 
 // Any url that is not handled above gets a 404!

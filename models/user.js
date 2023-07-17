@@ -28,7 +28,7 @@ const userSchema = new mongoose.Schema(
 
             required: [true, "Password is required!"]
         },
-        "passwordLastChanged": {
+        "lastLogoutTime": {
             type: Date,
             required: false,
             default: Date.now()

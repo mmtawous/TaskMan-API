@@ -13,7 +13,7 @@ router.post('/', login)
 // their refresh token.
 async function login(req, res) {
     // Check for a user with the given email
-    const user = await User.findOne({ email: req.body.email }).exec()
+    var user = await User.findOne({ email: req.body.email }).exec()
 
     // If the user provided doesn't exist then respond with an error
     if (!user) {

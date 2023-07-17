@@ -1,4 +1,5 @@
 const JWT = require('jsonwebtoken')
+const User = require('../models/user.js')
 
 /**
  * Generates a JWT token. If both an email and id are passed then the generated token will expire
@@ -16,7 +17,7 @@ function genJWT(email, id) {
     }
 }
 
-function authenticateToken(req, res, next) {
+async function authenticateToken(req, res, next) {
     // Check that the bearer token was passed in the Authorization header
     if (!req.header('Authorization')) {
         return res.status(400).json({ message: 'Missing access token' })
@@ -29,14 +30,20 @@ function authenticateToken(req, res, next) {
     try {
         // Verify that the access token is real
         decodedAccess = JWT.verify(accessToken, process.env.ACCESS_SECRET)
-        res.locals.authenticated = true
-        res.locals.message = decodedAccess
-        next();
 
     } catch (err) {
         // If we get an error then the token was invalid
         return res.status(400).json({ message: 'Bad access token' })
     }
+
+    const user = await User.findById(decodedAccess.id)
+
+    if (decodedAccess.iat < user.lastLogoutTime.getTime()) {
+        return res.status(400).json({ message: 'Access token created before last logout' })
+    }
+
+    res.locals.message = decodedAccess
+    next();
 
 }
 
