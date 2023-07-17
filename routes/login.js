@@ -1,5 +1,5 @@
 const express = require('express')
-const User = require('../models/user.js')
+const { User }  = require('../models/user.js')
 const bcrypt = require('bcrypt')
 const { genJWT } = require('../utils/auth_utils.js')
 const router = express.Router()

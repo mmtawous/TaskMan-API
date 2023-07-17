@@ -1,5 +1,25 @@
 const mongoose = require('mongoose');
-const { validatePassword } = require('../utils/auth_utils');
+
+function validatePassword(pass) {
+    let checks = 0;
+
+    // Check that length is between 8 and 32 chars
+    if (pass.length >= 8 && pass.length <= 32) checks++;
+
+    // Check that we have a digit
+    if (/[0-9]/.test(pass)) checks++;
+
+    // Check that we have an upper case
+    if (/[A-Z]/.test(pass)) checks++;
+
+    // Check that we have a lower case
+    if (/[a-z]/.test(pass)) checks++;
+
+    // Check that we have a special char
+    if (/[!@#$%^&*()_\-+={}|?<>\/\\]/.test(pass)) checks++;
+
+    return checks == 5;
+}
 
 const userSchema = new mongoose.Schema(
     {
@@ -42,4 +62,4 @@ userSchema.set('validateBeforeSave', false);
 
 const User = mongoose.model('User', userSchema)
 
-module.exports = User
+module.exports = { User, validatePassword }

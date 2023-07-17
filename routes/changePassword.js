@@ -1,18 +1,21 @@
 const express = require('express')
-const User = require('../models/user.js')
+const { User, validatePassword } = require('../models/user.js')
 const JWT = require('jsonwebtoken')
 const bcrypt = require('bcrypt')
 const redisClient = require('../utils/redis_client')
-const { authenticateToken, validatePassword } = require('../utils/auth_utils.js')
+const { authenticateToken } = require('../utils/auth_utils.js')
+const cookieParser = require("cookie-parser")
 
 const router = express.Router()
 
 router.use(express.json())
-router.use(authenticateToken)
 
-const saltRounds = process.env.SALT_ROUNDS;
+// Allow cookie parsing
+router.use(cookieParser())
 
-router.post('/', changePassword)
+const saltRounds = 10;
+
+router.post('/', authenticateToken, changePassword)
 
 async function changePassword(req, res) {
     // Check for all required params
@@ -53,7 +56,7 @@ async function changePassword(req, res) {
 
     if (!match)
         return res.status(401).json({ message: "Invalid credentials" })
-    
+
 
     if (!validatePassword(req.body.new_password))
         return res.status(400).json({ message: "Invalid new_password" })
@@ -64,19 +67,23 @@ async function changePassword(req, res) {
     // Hash the password with bcrypt and auto gen salt with 10 iterations
     bcrypt.hash(req.body.new_password, saltRounds, async function (err, hash) {
         if (err) {
+            console.log(saltRounds)
             // Hashing errors will be caught here
             res.status(400).json({ message: err.message })
         }
 
-        // Store hash in your password DB.
+        // Store hash in password DB.
         user.password = hash
 
         try {
-            user = await user.save()
+            await user.save()
         } catch (error) {
             // Saving errors will be caught here
             res.status(400).json({ message: error.message })
         }
+
+        // Respond with updated document
+        res.status(200).json(user)
 
     });
 
@@ -88,11 +95,6 @@ async function changePassword(req, res) {
     redisClient.expireAt(token_key, decodedRefresh.exp);
 
     res.clearCookie('jwt');
-
-
-
-    // Respond with updated document
-    res.status(200).json(user)
 }
 
 module.exports = router

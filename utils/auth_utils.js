@@ -1,5 +1,5 @@
 const JWT = require('jsonwebtoken')
-const User = require('../models/user.js')
+const { User }  = require('../models/user.js')
 
 /**
  * Generates a JWT token. If both an email and id are passed then the generated token will expire
@@ -9,9 +9,9 @@ const User = require('../models/user.js')
 function genJWT(email, id) {
     // Generate and return an access token
     if (email && id) {
-        return JWT.sign({ email: email, id: id }, process.env.ACCESS_SECRET, { expiresIn: '100m' })
+        return JWT.sign({ email: email, id: id, iat: Date.now() }, process.env.ACCESS_SECRET, { expiresIn: '100m' })
     } else if (id) {
-        return JWT.sign({ id: id }, process.env.REFRESH_SECRET, { expiresIn: '1d' })
+        return JWT.sign({ id: id, iat: Date.now() }, process.env.REFRESH_SECRET, { expiresIn: '1d' })
     } else {
         throw new Error("id is required")
     }
@@ -36,7 +36,7 @@ async function authenticateToken(req, res, next) {
         return res.status(400).json({ message: 'Bad access token' })
     }
 
-    const user = await User.findById(decodedAccess.id)
+    const user = await User.findById(decodedAccess.id).exec()
 
     if (decodedAccess.iat < user.lastLogoutTime.getTime()) {
         return res.status(400).json({ message: 'Access token created before last logout' })
@@ -47,25 +47,4 @@ async function authenticateToken(req, res, next) {
 
 }
 
-function validatePassword(pass) {
-    let checks = 0;
-
-    // Check that length is between 8 and 32 chars
-    if (pass.length >= 8 && pass.length <= 32) checks++;
-
-    // Check that we have a digit
-    if (/[0-9]/.test(pass)) checks++;
-
-    // Check that we have an upper case
-    if (/[A-Z]/.test(pass)) checks++;
-
-    // Check that we have a lower case
-    if (/[a-z]/.test(pass)) checks++;
-
-    // Check that we have a special char
-    if (/[!@#$%^&*()_\-+={}|?<>\/\\]/.test(pass)) checks++;
-
-    return checks == 5;
-}
-
-module.exports = { genJWT, authenticateToken, validatePassword }
+module.exports = { genJWT, authenticateToken }
