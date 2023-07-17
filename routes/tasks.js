@@ -13,7 +13,7 @@ router.delete('/:taskId', deleteTask)
 // Task Retrieval
 router.get('/', getAllTasks)
 router.get('/filter', filterTasks)
-// router.get('/sort', sortTasks)
+router.get('/sort', sortTasks)
 router.get('/:taskId', getTaskById)
 
 async function createTask(req, res) {
@@ -108,6 +108,50 @@ async function filterTasks(req, res) {
     } catch (err) {
         res.status(400).json({ message: err.message })
     }
+}
+
+async function sortTasks(req, res) {
+
+    const ownerId = res.locals.message.id
+    var tasks = null;
+
+    try {
+        // Get all tasks
+        tasks = await Task.find({ ownerId: ownerId });
+    } catch (err) {
+        res.status(400).json({ message: err.message })
+    }
+
+    const sortBy = req.query.sortBy ? req.query.sortBy : 'priority'
+
+    // Convert to a number and use in sort function
+    var ascending = !req.query.sortOrder?.toLowerCase().startsWith('des');
+
+    console.log("asc: " + ascending)
+
+    // Sort based on query param
+    switch (sortBy) {
+        case 'title':
+            tasks.sort((a, b) => {
+                return (ascending ? a.title.localeCompare(b.title) : -(a.title.localeCompare(b.title)));
+            })
+            console.log(tasks)
+            break;
+
+        case 'dueDate':
+            tasks.sort((a, b) => {
+                return (ascending ? (a.dueDate - b.dueDate) : -(a.dueDate - b.dueDate))
+            })
+            break;
+
+        default:
+            tasks.sort((a, b) => {
+                return (ascending ? (a.priority - b.priority) : -(a.priority - b.priority))
+            })
+    }
+
+    data = { task_count: tasks.length, tasks }
+    return res.status(200).json(data)
 }
 
 module.exports = router
