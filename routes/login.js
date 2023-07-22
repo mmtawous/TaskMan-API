@@ -10,8 +10,13 @@ router.post('/', login)
 // This auth system uses JWT tokens paired with a refresh token sent to the client in an http-only cookie
 // storing any revoked tokens in the backend on a local redis instance for quick lookups. The benefit of refresh
 // tokens is enhanced security and convenience for the user while also allowing for the user to logout and revoke
-// their refresh token.
+// their refresh token by adding it to the redis db.
 async function login(req, res) {
+    // Check for all required params
+    if (!(req.body.email && req.body.password)) {
+        return res.status(400).json({ message: 'Malformed request' })
+    }
+
     // Check for a user with the given email
     var user = await User.findOne({ email: req.body.email }).exec()
 
@@ -20,7 +25,7 @@ async function login(req, res) {
         return res.status(400).json({ message: "User does not exist!" })
     }
 
-    // Hash the provided password and compare with tht db version
+    // Hash the provided password and compare with the db version
     const match = await bcrypt.compare(req.body.password, user.password);
 
     if (!match) {
@@ -38,6 +43,7 @@ async function login(req, res) {
         maxAge: 24 * 60 * 60 * 1000
     });
 
+    // Respond with the access token 
     return res.status(200).json({ access });
 }
 

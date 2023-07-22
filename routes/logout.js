@@ -12,24 +12,31 @@ router.use(cookieParser())
 
 router.post('/', logout)
 
+/**
+ * 
+ * Logging out a user involves:
+ * 1. Invalidating their refresh token by adding it to the redis black-list
+ * 2. Clearing the refresh token from the cookie
+ * 
+ * Note: we don't update the lastLogoutTime because that would logout all devices of a user.
+ */
 async function logout(req, res) {
     // Check if the refresh token is present
     if (!req.cookies?.jwt) {
         return res.status(400).json({ message: 'Missing refresh token' })
     }
 
+    // Get the refresh token from the cookie named 'jwt'
     const refreshToken = req.cookies.jwt
-
 
     var decodedRefresh;
     try {
-        // Verify the refresh token ignoring expiration
+        // Verify the refresh token
         decodedRefresh = JWT.verify(refreshToken, process.env.REFRESH_SECRET)
     } catch (err) {
-        if (err instanceof TokenExpiredError)
-            return res.status(200).json({ message: 'Ignored; Token is already expired' })
-
-        return res.status(401).json({ message: 'Invalid refresh token' })
+        // If this wasn't an expiration error then the token must be invalid and we have to fail to logout 
+        if (!err instanceof TokenExpiredError)
+            return res.status(401).json({ message: 'Invalid refresh token' })
     }
 
     // Add the refresh token to the blacklist
@@ -37,17 +44,10 @@ async function logout(req, res) {
     await redisClient.set(token_key, refreshToken);
     redisClient.expireAt(token_key, decodedRefresh.exp);
 
+    // Clear the cookie
     res.clearCookie('jwt');
 
-    // Update the lastLogoutTime field in user
-    try {
-        var user = await User.findById(decodedRefresh.id).exec()
-        user.lastLogoutTime = Date.now();
-        user.save();
-    } catch (err) {
-        res.status(400).json({ message: err.message })
-    }
-
+    // Respond with a 200
     return res.status(200).json({ message: 'Success; Logged out' })
 }
 

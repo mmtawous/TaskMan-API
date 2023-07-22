@@ -5,7 +5,7 @@ const taskSchema = new mongoose.Schema(
         "title": {
             type: String,
             required: [true, "Title is required!"],
-            unique: true
+            index: { unique: true }
         },
         "description": {
             type: String,
@@ -32,6 +32,7 @@ const taskSchema = new mongoose.Schema(
         "ownerId": {
             type: String,
             required: false,
+            index: true // ownerId is queried for every get operation so we should index it
         }
     },
     { timestamps: true }

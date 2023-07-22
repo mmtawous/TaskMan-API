@@ -17,12 +17,19 @@ const saltRounds = 10;
 
 router.post('/', authenticateToken, changePassword)
 
+/**
+ * 
+ * Changing the password of a user involves the following steps:
+ * 
+ * 1. Handle checking for and decoding the refresh token
+ * 2. Find the user and change the password if it exists. This requires hashing the password
+ * 
+ */
 async function changePassword(req, res) {
     // Check for all required params
     if (!(req.body.email && req.body.password && req.body.new_password)) {
-        res.status(400).json({ message: 'Malformed request' })
+        return res.status(400).json({ message: 'Malformed request' })
     }
-
 
     /********************** Handle checking for and decoding the refresh token **********************/
     // Check if the refresh token is present
@@ -40,8 +47,6 @@ async function changePassword(req, res) {
         return res.status(401).json({ message: 'Invalid refresh token' })
     }
 
-
-
     /********************** Find the user and change the password if it exists **********************/
     // Check for a user with the given email
     var user = await User.findOne({ email: req.body.email }).exec()
@@ -51,25 +56,27 @@ async function changePassword(req, res) {
         return res.status(400).json({ message: "User does not exist!" })
     }
 
-    // Hash the provided password and compare with tht db version
+    // Hash the provided password and compare with the db version
     const match = await bcrypt.compare(req.body.password, user.password);
 
+    // Check the provided credentials match the existing ones
     if (!match)
         return res.status(401).json({ message: "Invalid credentials" })
 
-
+    // Validate the new password
     if (!validatePassword(req.body.new_password))
         return res.status(400).json({ message: "Invalid new_password" })
 
-    // Update the user lastLogoutTime field
+    // Update the user lastLogoutTime field to logout all devices.
     user.lastLogoutTime = Date.now();
 
     // Hash the password with bcrypt and auto gen salt with 10 iterations
-    bcrypt.hash(req.body.new_password, saltRounds, async function (err, hash) {
-        if (err) {
-            console.log(saltRounds)
+    // Any response from here on out are handled inside the callback. If this wasn't the case you could get
+    // multiple responses from the same request, which isn't good.
+    bcrypt.hash(req.body.new_password, saltRounds, async function (hashingErr, hash) {
+        if (hashingErr) {
             // Hashing errors will be caught here
-            res.status(400).json({ message: err.message })
+            return res.status(400).json({ message: hashingErr.message })
         }
 
         // Store hash in password DB.
@@ -77,24 +84,20 @@ async function changePassword(req, res) {
 
         try {
             await user.save()
-        } catch (error) {
+        } catch (savingError) {
             // Saving errors will be caught here
-            res.status(400).json({ message: error.message })
+            return res.status(400).json({ message: savingError.message })
         }
 
-        // Respond with updated document
-        res.status(200).json(user)
+        /********************** Invalidate the refresh token **********************/
+        const token_key = `bl_${refreshToken}`;
+        await redisClient.set(token_key, refreshToken);
+        redisClient.expireAt(token_key, decodedRefresh.exp);
 
+        // Respond with updated document
+        return res.status(200).json(user)
     });
 
-
-    /********************** Invalidate the refresh token **********************/
-    // Invalidate the current refresh token
-    const token_key = `bl_${refreshToken}`;
-    await redisClient.set(token_key, refreshToken);
-    redisClient.expireAt(token_key, decodedRefresh.exp);
-
-    res.clearCookie('jwt');
 }
 
 module.exports = router

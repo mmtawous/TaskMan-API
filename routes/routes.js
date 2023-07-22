@@ -16,8 +16,6 @@ router.use('/api/changePassword', changePwdRoute)
 router.use('/api/refresh', refreshRoute)
 router.use('/api/tasks', tasksRoute)
 
-
-
 // Any url that is not handled above gets a 404!
 router.use((req, res) => {
     // respond with json
