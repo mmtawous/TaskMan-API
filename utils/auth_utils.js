@@ -8,7 +8,7 @@ const JWT = require('jsonwebtoken')
 function genJWT(email, id) {
     // Generate and return an access token
     if (email && id) {
-        return JWT.sign({ email: email, id: id, iat: Date.now() }, process.env.ACCESS_SECRET, { expiresIn: '100m' })
+        return JWT.sign({ email: email, id: id, iat: Date.now() }, process.env.ACCESS_SECRET, { expiresIn: '10m' })
     } else if (id) {
         return JWT.sign({ id: id, iat: Date.now() }, process.env.REFRESH_SECRET, { expiresIn: '1d' })
     } else {

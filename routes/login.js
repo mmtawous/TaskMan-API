@@ -22,7 +22,7 @@ async function login(req, res) {
 
     // If the user provided doesn't exist then respond with an error
     if (!user) {
-        return res.status(400).json({ message: "User does not exist!" })
+        return res.status(400).json({ message: "User does not exist" })
     }
 
     // Hash the provided password and compare with the db version
