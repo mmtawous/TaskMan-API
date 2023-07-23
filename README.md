@@ -6,7 +6,7 @@ TaskMan-API is an advanced task management backend that leverages Express.js for
 
 To enhance security, TaskMan-API uses Redis for fast access token verification and JWT for stateless authentication. User passwords are securely hashed using bcrypt.
 
-### Important Features
+### Features
 
 - User authentication using JWT and refresh token for enhanced security.
 - Password hashing for secure storage and comparison.
@@ -17,6 +17,14 @@ To enhance security, TaskMan-API uses Redis for fast access token verification a
 - Allow users to create, update, and delete their tasks.
 - Provide endpoints to retrieve tasks, filter tasks based on specific criteria, and sort tasks based on query parameters.
 - Clear and informative error messages for better user experience.
+
+### To Be Added
+- [ ] Pagination for improved performance
+- [ ] Unit tests
+- [ ] Role-based access control
+ <br> 
+ 
+## Documentation
 
 ### User Registration Endpoint Documentation
 
@@ -343,11 +351,13 @@ These endpoints provide functionalities for managing tasks. To access these endp
 
 This endpoint allows users to create a new task with the following parameters in the JSON request body:
 
-- Title (required)
-- Description
-- Due Date
-- Status (0 = Pending, 1 = In Progress, 2 = Completed, 3 = On-Hold, 4 = Cancelled)
-- Priority
+| Parameter   | Type        | Description                                                                                      | Default Value                 |
+|-------------|-------------|--------------------------------------------------------------------------------------------------|-------------------------------|
+| title       | string      | The title of the task (required)                                                                 | N/A                           |
+| description | string      | The description of the task                                                                      | ""                            |
+| dueDate     | Date string | The date the task is due                                                                         | Current Date at task creation |
+| status      | number      | The status of the task (0 = Pending, 1 = In Progress, 2 = Completed, 3 = On-Hold, 4 = Cancelled) | 0                             |
+| priority    | number      | The priority of the task (-1 indicates no priority)                                              | -1                            |
 
 The new task object is returned in the response in JSON format.
 
@@ -379,10 +389,10 @@ This endpoint responds with all tasks owned by the currently authenticated user 
 
 This endpoint provides tasks filtered by the provided query parameters. Filtering currently only supports exact matching, including case sensitivity. Supported filter parameters are:
 
-- Title
-- Due Date
-- Status
-- Priority
+- `title`
+- `dueDate`
+- `status`
+- `priority`
 
 Callers may optionally sort the returned tasks by providing the `sortBy` and/or the `sortOrder` query parameter(s). Users may sort by title, due date, status, or priority. The `sortOrder` parameter may be "ascending" or "descending". If the `sortBy` parameter is provided without the `sortOrder` parameter, the sort order is ascending by default. If the `sortOrder` parameter is provided without the `sortBy` parameter, the tasks are sorted by priority by default.
 
